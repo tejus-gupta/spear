@@ -1,0 +1,10 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Sphinx documentation
+docs/_build/
+
+# exclude data from source control by default
+/data/
+
