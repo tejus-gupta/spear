@@ -5,16 +5,20 @@ class DeepFool():
     The DeepFool algorithm for generating adversarial examples as described in 'DeepFool: a simple and
      accurate method to fool deep neural networks' by Moosavi-Dezfooli et al.
     """
-    def __init__(self, norm = 2, max_iter = 15, step_size = 1.02):
+    def __init__(self, norm = 2, max_iter = 15, overshoot = 1.02, clip_min = 0, clip_max = 1):
         """
         :param norm: order of norm used for measuring perturbation (default is 2)
         :param max_iter: maximum number of iterations
-        :param step_size: In order to cross the classification boundary, the final perturbation is multiplied
-        by step_size. (default is 1.02)
+        :param overshoot: In order to cross the classification boundary, the final perturbation is multiplied
+        by overshoot. (default is 1.02)
+        :param clip_min: minimum value for clipping adversarial images
+        :param clip_max: maximum value for clipping adversarial images
         """
         self.norm = norm
         self.max_iter = max_iter
-        self.step_size = step_size
+        self.overshoot = overshoot
+        self.clip_min = clip_min
+        self.clip_max = clip_max
         self.criterion = torch.nn.CrossEntropyLoss()
     
     def generate(self, net, images, labels):
@@ -43,7 +47,7 @@ class DeepFool():
             outputs = net(images)
 
             if torch.max(outputs, 1)[1] != label:
-                return images
+                return torch.clamp(images, self.clip_min, self.clip_max)
             
             min_dist = float("inf")
             
@@ -71,10 +75,9 @@ class DeepFool():
 
             with torch.no_grad():
                 if self.norm == float("inf"):
-                    dist += min_dist
-                    images = torch.clamp(images + min_dist * torch.sign(w_l), 0, 1)
+                    images = torch.clamp(images + min_dist * torch.sign(w_l), self.clip_min, self.clip_max)
                 else:
-                    images = torch.clamp(images + abs(f_l) / torch.pow(torch.norm(w_l, q), q) * torch.pow(torch.abs(w_l), q-1) * torch.sign(w_l), 0, 1)
+                    images = torch.clamp(images + abs(f_l) / torch.pow(torch.norm(w_l, q), q) * torch.pow(torch.abs(w_l), q-1) * torch.sign(w_l), self.clip_min, self.clip_max)
         
         with torch.no_grad():
-            return clean_images + self.step_size * (images - clean_images)
+            return torch.clamp(clean_images + self.overshoot * (images - clean_images), self.clip_min, self.clip_max)

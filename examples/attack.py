@@ -8,7 +8,7 @@ import torch.nn.functional as F
 transform = transforms.Compose([transforms.ToTensor(),])
 
 testset = torchvision.datasets.MNIST(root='../data', train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=1, shuffle=False, pin_memory=True, num_workers=10)
+testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, pin_memory=True, num_workers=10)
 
 class Net(nn.Module):
     def __init__(self):
@@ -55,15 +55,18 @@ def attack(net, dataloader, adversary):
 
         total += (clean_predicted == labels).sum().item()
         correct += (torch.mul(adv_predicted == labels , clean_predicted == labels)).sum().item()
-        print(correct, total)
+        print(total, correct)
 
     print("Attack success rate: %.3f" % (1 - 1.0*correct/total))
-    print(robustness/10000)
 
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from spear.attacks.DeepFool import DeepFool
+from spear.attacks.FGSM import FGSM
+from spear.attacks.BasicIterativeMethod import BasicIterativeMethod
 
-attack(net, testloader, DeepFool(norm=float("inf")))
+#print(help(BasicIterativeMethod))
+
+attack(net, testloader, BasicIterativeMethod())
