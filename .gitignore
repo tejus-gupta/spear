@@ -7,4 +7,6 @@ docs/_build/
 
 # exclude data from source control by default
 /data/
-
+/pytorch_spear.egg_info/
+/build/
+/dist/
