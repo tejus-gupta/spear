@@ -5,10 +5,12 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 
+import numpy as np
+
 transform = transforms.Compose([transforms.ToTensor(),])
 
 testset = torchvision.datasets.MNIST(root='../data', train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, pin_memory=True, num_workers=10)
+testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, pin_memory=True, num_workers=10)
 
 class Net(nn.Module):
     def __init__(self):
@@ -48,7 +50,8 @@ def attack(net, dataloader, adversary):
         outputs = net(images)
         _, clean_predicted = torch.max(outputs.data, 1)
 
-        adversarial_images = adversary.generate(net, images, labels)
+        targets = np.random.randint(0,9, size=(images.shape[0]))
+        adversarial_images = adversary.generate(net, images, torch.tensor(targets).cuda().long())
 
         outputs = net(adversarial_images)
         _, adv_predicted = torch.max(outputs.data, 1)
@@ -56,6 +59,7 @@ def attack(net, dataloader, adversary):
         total += (clean_predicted == labels).sum().item()
         correct += (torch.mul(adv_predicted == labels , clean_predicted == labels)).sum().item()
         print(total, correct)
+        
 
     print("Attack success rate: %.3f" % (1 - 1.0*correct/total))
 
@@ -65,8 +69,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from spear.attacks.DeepFool import DeepFool
 from spear.attacks.FGSM import FGSM
-from spear.attacks.BasicIterativeMethod import BasicIterativeMethod
+from spear.attacks.BIM import BIM
+from spear.attacks.PGD import PGD
+from spear.attacks.MI_FGSM import MI_FGSM
+from spear.attacks.CarliniWagner import CarliniWagner
 
-#print(help(BasicIterativeMethod))
+#print(help(MI_FGSM))
 
-attack(net, testloader, BasicIterativeMethod())
+attack(net, testloader, CarliniWagner(verbose=True))

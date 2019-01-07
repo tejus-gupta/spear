@@ -1,6 +1,6 @@
 import torch
 
-class BasicIterativeMethod():
+class BIM():
     """
     The Basic Iterative Method for generating adversarial examples as described in 'Adversarial examples in 
     the physical world' by Kurakin et al.
